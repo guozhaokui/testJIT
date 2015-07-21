@@ -1,0 +1,9 @@
+﻿
+include\llvm\Support\DataTypes.h  是cmake生成的
+需要把build下面的Config目录下的h和def都拷贝到include\llvm\Config目录下
+
+error C2956: sized deallocation function 'operator delete(void*, size_t)' would be chosen as placement deallocation function
+	这个是rc版的一个bug。
+	在编译里面加
+	/Zc:sizedDealloc- 
+	
