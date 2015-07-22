@@ -61,7 +61,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>LLVMX86CodeGen.lib;LLVMExecutionEngine.lib;LLVMAsmPrinter.lib;LLVMSelectionDAG.lib;LLVMX86Desc.lib;LLVMMCParser.lib;LLVMCodeGen.lib;LLVMX86AsmPrinter.lib;LLVMX86Info.lib;LLVMScalarOpts.lib;LLVMX86Utils.lib;LLVMInstCombine.lib;LLVMTransformUtils.lib;LLVMipa.lib;LLVMAnalysis.lib;LLVMTarget.lib;LLVMCore.lib;LLVMMC.lib;LLVMObject.lib;LLVMSupport.lib;LLVMInterpreter.lib;LLVMMCDisassembler.lib;LLVMInstrumentation.lib;LLVMBitReader.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>LLVMX86CodeGen.lib;LLVMCodeGen.lib;LLVMExecutionEngine.lib;LLVMAsmPrinter.lib;LLVMSelectionDAG.lib;LLVMX86Desc.lib;LLVMMCParser.lib;LLVMX86AsmPrinter.lib;LLVMX86Info.lib;LLVMScalarOpts.lib;LLVMX86Utils.lib;LLVMInstCombine.lib;LLVMTransformUtils.lib;LLVMipa.lib;LLVMAnalysis.lib;LLVMTarget.lib;LLVMCore.lib;LLVMMC.lib;LLVMObject.lib;LLVMSupport.lib;LLVMInterpreter.lib;LLVMMCDisassembler.lib;LLVMInstrumentation.lib;LLVMBitReader.lib;LLVMMCJIT.lib;LLVMRuntimeDyld.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>E:\llvm\llvm-git\build\Debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

@@ -11,16 +11,18 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/TargetSelect.h"
 #include "llvm/Support/raw_ostream.h"
-
+#include "llvm/ExecutionEngine/MCJIT.h"
 using namespace llvm;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	InitializeNativeTarget();
-
+	InitializeNativeTargetAsmPrinter();
+	LLVMInitializeNativeTarget();
 	LLVMContext Context;
 
 	// Create some module to put our function into it.
@@ -83,7 +85,19 @@ int _tmain(int argc, _TCHAR* argv[])
 	builder.CreateRet(Add1CallRes);
 
 	// Now we create the JIT.
-	ExecutionEngine* EE = EngineBuilder(std::move(Owner)).create();
+	//ExecutionEngine* EE = EngineBuilder(std::move(Owner)).setEngineKind(EngineKind::JIT).create();
+	std::string errStr;
+	ExecutionEngine *EE =
+		EngineBuilder(std::move(Owner))
+		.setErrorStr(&errStr)
+		.setEngineKind(EngineKind::JIT)
+		.create();
+
+	errs() << "verifying... ";
+	if (verifyModule(*M)) {
+		errs() << argv[0] << ": Error constructing function!\n";
+		return 1;
+	}
 
 	outs() << "We just constructed this LLVM module:\n\n" << *M;
 	outs() << "\n\nRunning foo: ";

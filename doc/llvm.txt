@@ -7,3 +7,108 @@ error C2956: sized deallocation function 'operator delete(void*, size_t)' would 
 	在编译里面加
 	/Zc:sizedDealloc- 
 	
+ExecutionEngine
+	执行LLVM module的
+	支持interpreter和JIT
+AssemblyWriter
+	这个可以把 Module 以IR汇编的形式打印出来
+	Module可以看成是多个函数的集合，可以在前面有全局变量。
+		
+
+TargetMachine *EngineBuilder::selectTarget(const Triple &TargetTriple,
+                              StringRef MArch,
+                              StringRef MCPU,
+                              const SmallVectorImpl<std::string>& MAttrs)
+	这里会根据传入的参数或者如果没传则取当前机器的
+ExecutionEngine *EngineBuilder::create(TargetMachine *TM) {	
+	
+	
+怎么生成jit	
+生成的jit是什么
+需要优化么
+变量名字还保存着么
+例子是生成IR了么
+	调用的是IRBuilder.h的函数
+
+
+builder.CreateRet(Add1CallRes);
+	ret Add1CallRes:Value
+	
+
+	例子的打印
+		; ModuleID = 'test'
+			//M->getModuleIdentifier() 
+		define i32 @add1(i32 %AnArg) {
+		EntryBlock:
+		  %0 = add i32 1, %AnArg
+		  ret i32 %0
+		}
+
+		define i32 @foo() {
+		EntryBlock:
+		  %0 = tail call i32 @add1(i32 10)
+		  ret i32 %0
+		}	
+		没有全局变量
+
+	函数的打印是用for来遍历的，因为M有begin和end函数，所以可以这样用
+	  for (const Function &F : *M)
+		printFunction(&F);
+	
+	tail call 好像是函数的最后一个调用，当在递归的时候，可以针对tailcall做特殊的优化，即return 1;return 1; return 1; 优化成一个。
+	
+现在感觉是interpreter执行
+	ExecutionEngine* EE = EngineBuilder(std::move(Owner)).create();
+	改成下面试试
+	ExecutionEngine* EE = EngineBuilder(std::move(Owner)).setEngineKind(EngineKind::JIT).create();
+	
+	有错误
+	.setErrorStr(&errStr)
+		JIT has not been linked in.
+		下面任何地方使用M都会非法
+	需要 	#include "llvm/ExecutionEngine/MCJIT.h"
+		这样才会连接jit
+		然后包含 LLVMMCJIT.lib;LLVMRuntimeDyld.lib
+	换成JIT后，执行函数就变成了
+		GenericValue MCJIT::runFunction(Function *F, ArrayRef<GenericValue> ArgValues)
+		
+	MCJIT::generateCodeForModule(Module *M)
+		这个是生成可执行文件的地方？
+		  // If the cache did not contain a suitable object, compile the object
+		  if (!ObjectToLoad) {
+			ObjectToLoad = emitObject(M);
+			assert(ObjectToLoad && "Compilation did not produce an object.");
+		  }	
+		生成JIT会失败
+		  AsmPrinter *createAsmPrinter(TargetMachine &TM,
+									   std::unique_ptr<MCStreamer> &&Streamer) const {
+			if (!AsmPrinterCtorFn)
+			  return nullptr;			这里返回了
+			return AsmPrinterCtorFn(TM, std::move(Streamer));
+		  }		
+		llvm-config.h
+			/* LLVM name for the native AsmPrinter init function, if available */
+			#define LLVM_NATIVE_ASMPRINTER LLVMInitializeX86AsmPrinter		
+			
+		需要在初始化之后执行
+		InitializeNativeTargetAsmPrinter();
+			这个在 #include "llvm/Support/TargetSelect.h" 中
+			
+		执行报错:
+			Running foo: Unsupported target for RuntimeDyldCOFF.
+			UNREACHABLE executed at E:\llvm\llvm-git\lib\ExecutionEngine\RuntimeDyld\RuntimeDyldCOFF.cpp:49!	
+
+			std::unique_ptr<RuntimeDyldCOFF>
+			llvm::RuntimeDyldCOFF::create(Triple::ArchType Arch,
+										  RuntimeDyld::MemoryManager &MemMgr,
+										  RuntimeDyld::SymbolResolver &Resolver) {
+			  switch (Arch) {	这个为x86
+			  default:
+				llvm_unreachable("Unsupported target for RuntimeDyldCOFF.");
+				break;
+			  case Triple::x86_64:
+				return make_unique<RuntimeDyldCOFFX86_64>(MemMgr, Resolver);
+			  }
+			}		
+
+			const Triple &T = getTargetTriple();			这里会返回x86
